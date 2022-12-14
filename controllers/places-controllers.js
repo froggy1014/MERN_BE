@@ -2,7 +2,7 @@ const { validationResult } = require('express-validator');
 const HttpError = require('../models/http-error');
 const getCoordsForAddress = require('../util/location');
 const mongoose = require('mongoose');
-
+const fs = require('fs');
 const Place = require('.././models/place');
 const User = require('../models/user');
 
@@ -64,7 +64,7 @@ const createPlace = async (req, res, next) => {
     next(new HttpError('Invalid inputs passed, please check your data', 422));
   }
 
-  const { address, creator, title, description } = req.body;
+  const { address, creator, title, description, } = req.body;
 
   let location;
   try {
@@ -78,8 +78,7 @@ const createPlace = async (req, res, next) => {
     description,
     address,
     location,
-    image:
-      'https://hips.hearstapps.com/hmg-prod.s3.amazonaws.com/images/chow-chow-portrait-royalty-free-image-1652926953.jpg?crop=0.44455xw:1xh;center,top&resize=980:*',
+    image: req.file.path,
     creator
   });
 
@@ -168,6 +167,8 @@ const deletePlace = async (req, res, next) => {
     return next(error);
   }
 
+  const imagePath = place.image
+
 
   try {
     // 매번 세션을 부를때마다 다른 세션값을 반환한다.
@@ -184,6 +185,10 @@ const deletePlace = async (req, res, next) => {
     return next(error);
   }
   
+  fs.unlink(imagePath, err => {
+    console.log(err)
+  });
+
   res.status(200).json({ message: 'Deleted place.' });
 };
 
