@@ -8,6 +8,7 @@ const mongoose = require('mongoose');
 const placesRoutes = require('./routes/places-routes');
 const usersRoutes = require('./routes/users-routes');
 const HttpError = require('./models/http-error');
+const port = process.env.PORT || 5002
 
 // 환경변수 가져오기 
 require('dotenv').config();
@@ -55,7 +56,7 @@ mongoose
   )
   .then(() => {
     console.log('connected')
-    app.listen(process.env.PORT || 5000);
+    app.listen(port);
   })
   .catch((err) => {
     console.log(err);
