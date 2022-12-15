@@ -49,7 +49,6 @@ app.use((error, req, res, next) => {
 });
 
 // mongodb.net 뒤에 있는게 데이터베이스 이름
-
 mongoose
   .connect(
     `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASSWORD}@cluster0.9m2yq56.mongodb.net/${process.env.DB_NAME}?retryWrites=true&w=majority`
