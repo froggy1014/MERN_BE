@@ -79,7 +79,7 @@ const signup = async (req, res, next) => {
     // 첫번째 파라미터에 담고 싶은 데이터를 payload로 넘겨준다.
     // 두번째 파라미터에 서버만 알고 있는 Secret Key를 담아준다.
     // 세번째 파라미터 만료시간 그 외 찾아보면 많은 것들을 설정해줄 수 있다. 
-    token = jwt.sign({userId: createdUser.id, email: createdUser.email}, process.env.SECRET_KEY , {expiresIn: '1h'}) ;
+    token = jwt.sign({userId: createdUser.id, email: createdUser.email}, process.env.JWT_SECRET_KEY , {expiresIn: '1h'}) ;
   } catch {
     const error = new HttpError('Signing up failed, please try again later.', 500);
     return next(error);
@@ -127,7 +127,7 @@ const login = async (req, res, next) => {
     // 첫번째 파라미터에 담고 싶은 데이터를 payload로 넘겨준다.
     // 두번째 파라미터에 서버만 알고 있는 Secret Key를 담아준다.
     // 세번째 파라미터 만료시간 그 외 찾아보면 많은 것들을 설정해줄 수 있다. 
-    token = jwt.sign({userId: existingUser.id, email: existingUser.email}, process.env.SECRET_KEY , {expiresIn: '1h'}) ;
+    token = jwt.sign({userId: existingUser.id, email: existingUser.email}, process.env.JWT_SECRET_KEY , {expiresIn: '1h'}) ;
   } catch {
     const error = new HttpError('Logging in failed, please try again later.', 500);
     return next(error);

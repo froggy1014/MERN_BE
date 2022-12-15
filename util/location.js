@@ -1,6 +1,6 @@
 const request = require("requestify");
 const HttpError = require('../models/http-error');
-const API_KEY = 'AIzaSyB_CvZu-cDZIOJL05KK8PxDg6zl37fl2z8';
+const API_KEY = process.env.GOOGLE_API_KEY
 
 async function getCoordsForAddress(address) {
   const url = `https://maps.googleapis.com/maps/api/geocode/json?address=${encodeURIComponent(address)}&key=${API_KEY}`;

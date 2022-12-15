@@ -14,7 +14,7 @@ module.exports = (req, res, next) => {
     }
 
     // Secret Key를 통해 유효성을 검사한다.  
-    const decodedToken = jwt.verify(token, process.env.SECRET_KEY);
+    const decodedToken = jwt.verify(token, process.env.JWT_SECRET_KEY);
 
     // 이런식으로 미들웨어 중간에서 req에 객체에 데이터를 담아 넘겨줄 수 있다.
     req.userData = {userId: decodedToken.userId};
