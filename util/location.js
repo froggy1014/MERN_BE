@@ -1,5 +1,6 @@
 const request = require("requestify");
 const HttpError = require('../models/http-error');
+require("dotenv").config();
 const API_KEY = process.env.GOOGLE_API_KEY
 
 async function getCoordsForAddress(address) {
@@ -15,7 +16,7 @@ async function getCoordsForAddress(address) {
   }
   
   const coordinates = data.results[0].geometry.location;
-  
+
   return coordinates;
 }
 

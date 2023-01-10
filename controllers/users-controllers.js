@@ -4,17 +4,16 @@ const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const HttpError = require('../models/http-error');
 const User = require('../models/user');
-const { USER } = require('../constants/Error');
+const { USER: ERROR } = require('../constants/Error');
 
 
 const getUsers = async (req, res, next) => {
-  let users;
-  
   // password 속성만 빼고 데이터 반환을 원할때 
-  try {
+  let users;
+    try {
     users = await User.find({}, '-password')
   } catch (err) {
-    return next(new HttpError(USER.FETCH, 500));
+    return next(new HttpError(ERROR.FETCH, 500));
   }
 
   res.json({users: users.map(user => user.toObject({ getters: true}))});
@@ -23,7 +22,7 @@ const getUsers = async (req, res, next) => {
 const signup = async (req, res, next) => {
   const errors = validationResult(req);
   if (!errors.isEmpty()) {
-    return next(new HttpError(USER.INVALID, 422));
+    return next(new HttpError(ERROR.INVALID, 422));
   }
   const { name, email, password } = req.body;
 
@@ -32,16 +31,16 @@ const signup = async (req, res, next) => {
   try {
     existingUser = await User.findOne({ email: email });
   } catch (err) {
-    return next(new HttpError(USER.LOGIN, 500));
+    return next(new HttpError(ERROR.LOGIN, 500));
   }
 
-  if (existingUser) return next(new HttpError(USER.EXISTING, 422));
+  if (existingUser) return next(new HttpError(ERROR.EXISTING, 422));
 
   let hashedPassword; 
   try {
     hashedPassword = await bcrypt.hash(password, 12)
   } catch {
-    return next(new HttpError(USER.SERVER, 500));
+    return next(new HttpError(ERROR.SERVER, 500));
   }
 
 
@@ -68,7 +67,7 @@ const signup = async (req, res, next) => {
     // 세번째 파라미터 만료시간 그 외 찾아보면 많은 것들을 설정해줄 수 있다. 
     token = jwt.sign({userId: createdUser.id, email: createdUser.email}, process.env.JWT_SECRET_KEY , {expiresIn: '1h'}) ;
   } catch {
-    return next(new HttpError(USER.LOGIN, 500));
+    return next(new HttpError(ERROR.LOGIN, 500));
   }
 
 
@@ -79,26 +78,25 @@ const login = async (req, res, next) => {
   const { email, password } = req.body;
 
   let existingUser;
-
   try {
     existingUser = await User.findOne({ email: email });
   } catch (err) {
-    return next(new HttpError(USER.LOGIN, 500));
+    return next(new HttpError(ERROR.LOGIN, 500));
   }
 
   if (!existingUser) {
-    return next(new HttpError(USER.AUTH, 403));
+    return next(new HttpError(ERROR.AUTH, 403));
   }
   
   let isValidPassword = false;
   try {
     isValidPassword = await bcrypt.compare(password, existingUser.password)
   } catch {
-    return next(new HttpError(USER.AUTH, 500));
+    return next(new HttpError(ERROR.AUTH, 500));
   }
 
   if(!isValidPassword) {
-    return next(new HttpError(USER.INVALID, 403));
+    return next(new HttpError(ERROR.INVALID, 403));
   } 
 
   let token;
@@ -108,7 +106,7 @@ const login = async (req, res, next) => {
     // 세번째 파라미터 만료시간 그 외 찾아보면 많은 것들을 설정해줄 수 있다. 
     token = jwt.sign({userId: existingUser.id, email: existingUser.email}, process.env.JWT_SECRET_KEY , {expiresIn: '1h'}) ;
   } catch {
-    return next(new HttpError(USER.LOGIN, 500));
+    return next(new HttpError(ERROR.LOGIN, 500));
   }
 
   res.json({ userId: existingUser.id, email: existingUser.email, accessToken: token });
