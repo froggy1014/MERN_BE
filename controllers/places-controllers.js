@@ -5,32 +5,25 @@ const mongoose = require('mongoose');
 const fs = require('fs');
 const Place = require('.././models/place');
 const User = require('../models/user');
+const { PLACE } = require('../constants/Error');
 
 const getPlaceById = async (req, res, next) => {
   const userId = req.params.pid;
 
-  let userWithPlaces;
+  let userPlaces;
   try {
-    userWithPlaces = await User.findById(userId).populate('places');
+    userPlaces = await User.findById(userId).populate('places');
   } catch (err) {
-    const error = new HttpError(
-      'something went wrong, could not find a place',
-      500
-    );
-    return next(error);
+    return next(new HttpError(PLACE.SERVER, 500));
   }
 
-  if (!userWithPlaces || userWithPlaces.places.length === 0) {
-    const error = new HttpError(
-      'could not find a place for the provided id',
-      404
-    );
-    return next(error);
+  if (!userPlaces || userPlaces.places.length === 0) {
+    return next(new HttpError(PLACE.WRONGID, 404));
   }
 
   // 몽구스는 데이터 조회후 해당 데이터를 분해하거나 할때 POJO가 아닌,
   // Mongoose Document형태이기때문에 toObject를 사용해서 POJO로 변환
-  res.json({ place: userWithPlaces.toObject({ getters: true }) });
+  res.json({ place: userPlaces.toObject({ getters: true }) });
 };
 
 const getPlaceByUserId = async (req, res, next) => {
@@ -40,31 +33,23 @@ const getPlaceByUserId = async (req, res, next) => {
   try {
     place = await Place.find({ creator: userId });
   } catch (err) {
-    const error = new HttpError(
-      'something went wrong, could not find a place',
-      500
-    );
-    return next(error);
+    return next(new HttpError(PLACE.SERVER, 500));
   }
 
-  if (!place) {
-    const error = new HttpError(
-      'could not find a place for the provided userId',
-      404
-    );
-    return next(error);
-  }
+  if (!place) return next(new HttpError(PLACE.WRONGID, 404));
 
   res.json({ place: place.map((place) => place.toObject({ getters: true })) });
 };
 
 const createPlace = async (req, res, next) => {
+  // 앞서서 라우트에서 검사한 유효성 검사 결과를 확인하고,
+  // 에러가 있다면 에러를 던진다. 
   const errors = validationResult(req);
-  if (!errors.isEmpty()) {
-    next(new HttpError('Invalid inputs passed, please check your data', 422));
-  }
+  if (!errors.isEmpty())  next(new HttpError(PLACE.INVALID, 422));
 
   const { address, title, description, } = req.body;
+  
+  console.log(address);
 
   let location;
   try {
@@ -88,13 +73,11 @@ const createPlace = async (req, res, next) => {
   try {
     user = await User.findById(req.userData.userId);
   } catch (err) { 
-    const error = new HttpError('Creating place failed, please try again', 500);
-    return next(error);
+    return next(new HttpError(PLACE.CREATE, 500));
   }
 
   if(!user) {
-    const error = new HttpError('Could not find user for provided id', 404);
-    return next(error);
+    return next(new HttpError(PLACE.WRONGID, 404));
   }
 
   // 몽구스에서 저장할때 사용하는 메소드
@@ -108,11 +91,7 @@ const createPlace = async (req, res, next) => {
     await user.save({ session : sess });
     await sess.commitTransaction();
   } catch (err) {
-    const error = new HttpError(
-      'Creating place failed, please try again.',
-      500
-    );
-    return next(error);
+    return next(new HttpError(PLACE.CREATE, 500));
   }
 
   res.status(201).json({ place: createdPlace });
@@ -121,7 +100,7 @@ const createPlace = async (req, res, next) => {
 const updatePlace = async (req, res, next) => {
   const errors = validationResult(req);
   if (!errors.isEmpty()) {
-    return next(new HttpError('Invalid inputs passed, please check your data', 422));
+    return next(new HttpError(PLACE.INVALID, 422));
   }
 
   const { title, description } = req.body;
@@ -131,30 +110,22 @@ const updatePlace = async (req, res, next) => {
   try {
     place = await Place.findById(placeId);
   } catch (err) {
-    const error = new HttpError(
-      'Something wen wrong, could not update places.',
-      500
-    );
-    return next(error);
+    return next(new HttpError(PLACE.SERVER, 500));
   }
 
   // MONGODB ID는 toString을 통해서 정상적인 문자열로 바꿔줘야함
   if (place.creator.toString() !== req.userData.userId) {
-    const error = new HttpError(
-      'You are not allowed to edit this place',
-      401
-    );
-    return next(error);
+    return next(new HttpError(PLACE.AUTHEDIT, 401));
   }
 
+  // MongoDB에서 가져온 해당 아이디에 대한 title, description을 덮어써준다.
   place.title = title;
   place.description = description;
 
   try {
     await place.save();
   } catch (err) {
-    const error = new HttpError('Something wen wrong, could not update place', 500);
-    return next(error);
+    return next(new HttpError(PLACE.SERVER, 500));
   }
 
   res.status(200).json({ place: place.toObject({getters: true}) });
@@ -167,21 +138,13 @@ const deletePlace = async (req, res, next) => {
   try {
     place = await Place.findById(placeId).populate('creator');
   } catch (err) {
-    const error = new HttpError('Something wen wrong, could not delete place', 500);
-    return next(error);
+    return next(new HttpError(PLACE.SERVER, 500));
   }
 
-  if(!place) {
-    const error = new HttpError('Could not find place for this id.', 404);
-    return next(error);
-  }
+  if(!place) return next(new HttpError(PLACE.WRONGID, 404));
 
   if(place.creator.id !== req.userData.userId) {
-    const error = new HttpError(
-      'You are not allowed to delete this place',
-      401
-    );
-    return next(error);
+    return next(new HttpError(PLACE.AUTHDELETE, 401));
   }
 
   const imagePath = place.image
@@ -198,8 +161,7 @@ const deletePlace = async (req, res, next) => {
     await place.creator.save({session: sess});
     await sess.commitTransaction();
   } catch(err) {
-    const error = new HttpError('Something went wrong, could not delete place', 500);
-    return next(error);
+    return next(new HttpError(PLACE.SERVER, 500));
   }
   
   fs.unlink(imagePath, err => {
@@ -209,6 +171,8 @@ const deletePlace = async (req, res, next) => {
   res.status(200).json({ message: 'Deleted place.' });
 };
 
+// 함수에 대한 포인터만 보낸다.
+// Express가 알아서 실행해줌.
 exports.getPlaceById = getPlaceById;
 exports.getPlaceByUserId = getPlaceByUserId;
 exports.createPlace = createPlace;
