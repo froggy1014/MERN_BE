@@ -49,6 +49,7 @@ const createPlace = async (req, res, next) => {
   const errors = validationResult(req);
   if (!errors.isEmpty())  next(new HttpError(ERROR.INVALID, 422));
 
+  
   const { address, title, description, } = req.body;
   
   let location;
@@ -57,16 +58,15 @@ const createPlace = async (req, res, next) => {
   } catch (error) {
     return next(error);
   }
-
+  
   const createdPlace = new Place({
     title,
     description,
     address,
     location,
-    image: req.file.path,
+    image: req.file.location.split('/').pop(),
     creator: req.userData.userId
   });
-
 
   let user;
 

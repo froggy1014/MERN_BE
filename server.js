@@ -1,5 +1,4 @@
 const fs = require('fs');
-const path = require('path')
 
 // express 상수 -> 함수가 됨. 
 const express = require('express');
@@ -29,7 +28,6 @@ const app = express();
 // 제일 먼저 일단 req.body를 파싱을 한다. 
 app.use(bodyParser.json());
 
-app.use('/uploads/images', express.static(path.join('uploads', 'images')));
 
 // cors에 대한 처리 
 app.use((req, res, next) => {
