@@ -22,7 +22,7 @@ const MIME_TYPE_MAP = {
 }
 
 const fileUpload = multer({
-  limits: { fileSize: 500000 },
+  limits: { fileSize: 1000000 },
   storage: multerS3({
       s3: new AWS.S3(),
       bucket: 'place-ive-been',
